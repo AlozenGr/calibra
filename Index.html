@@ -3,17 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Calibração – Estação Total</title>
+  <title>Calibração – Estação Total (Web)</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-800">
-  <div class="p-4 space-y-4">
-    <h1 class="text-xl font-bold">Calibração – Estação Total</h1>
+  <div class="max-w-5xl mx-auto p-4 md:p-8 space-y-6">
+    <header class="flex items-center justify-between">
+      <h1 class="text-2xl font-bold">Calibração – Estação Total</h1>
+      <span class="text-xs text-slate-500" id="status">offline</span>
+    </header>
 
-    <!-- Nova calibração -->
-    <section class="bg-white rounded-xl shadow p-3">
-      <h2 class="font-semibold mb-2">1) Nova calibração</h2>
-      <div class="grid grid-cols-2 gap-2 text-sm">
+    <!-- 1) Nova calibração -->
+    <section class="bg-white rounded-2xl shadow p-4">
+      <h2 class="font-semibold mb-3">1) Nova calibração</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
         <input id="calibId" class="border rounded p-2" placeholder="ID (ex: CAL-2025-001)" />
         <input id="data" type="date" class="border rounded p-2" />
         <input id="cliente" class="border rounded p-2 col-span-2" placeholder="Cliente / Razão Social" />
@@ -25,15 +28,15 @@
         <input id="res" class="border rounded p-2" placeholder='Resolução angular (")' />
         <input id="obs" class="border rounded p-2 col-span-2" placeholder="Observações" />
       </div>
-      <div class="mt-2 flex gap-2">
+      <div class="mt-3 flex gap-2">
         <button class="px-3 py-2 rounded bg-blue-600 text-white" onclick="novaCalibracao()">Salvar</button>
       </div>
     </section>
 
-    <!-- EDM -->
-    <section class="bg-white rounded-xl shadow p-3">
-      <h2 class="font-semibold mb-2">2) Leituras EDM (distância)</h2>
-      <div class="grid grid-cols-3 gap-2 text-sm">
+    <!-- 2) Leituras EDM -->
+    <section class="bg-white rounded-2xl shadow p-4">
+      <h2 class="font-semibold mb-3">2) Leituras EDM (distância)</h2>
+      <div class="grid grid-cols-2 md:grid-cols-6 gap-2 text-sm">
         <input id="edm_calibId" class="border rounded p-2" placeholder="calibId" />
         <input id="edm_ponto" class="border rounded p-2" placeholder="Ponto" />
         <input id="edm_rep" class="border rounded p-2" placeholder="Repetição" />
@@ -43,18 +46,18 @@
         <input id="edm_t" class="border rounded p-2" placeholder="Temperatura (°C)" />
         <input id="edm_ur" class="border rounded p-2" placeholder="UR (%)" />
         <input id="edm_p" class="border rounded p-2" placeholder="Pressão (hPa)" />
-        <input id="edm_obs" class="border rounded p-2 col-span-2" placeholder="Observações" />
+        <input id="edm_obs" class="border rounded p-2 col-span-2 md:col-span-4" placeholder="Observações" />
         <label class="flex items-center gap-2"><input id="edm_usar" type="checkbox" checked /> usar?</label>
       </div>
-      <div class="mt-2 flex gap-2">
+      <div class="mt-3 flex gap-2">
         <button class="px-3 py-2 rounded bg-emerald-600 text-white" onclick="addEdm()">Adicionar</button>
       </div>
     </section>
 
-    <!-- Ângulos -->
-    <section class="bg-white rounded-xl shadow p-3">
-      <h2 class="font-semibold mb-2">3) Leituras Ângulos (HZ / V)</h2>
-      <div class="grid grid-cols-3 gap-2 text-sm">
+    <!-- 3) Leituras Ângulos -->
+    <section class="bg-white rounded-2xl shadow p-4">
+      <h2 class="font-semibold mb-3">3) Leituras Ângulos (HZ / V)</h2>
+      <div class="grid grid-cols-2 md:grid-cols-6 gap-2 text-sm">
         <input id="ang_calibId" class="border rounded p-2" placeholder="calibId" />
         <select id="ang_tipo" class="border rounded p-2">
           <option value="HZ">Horizontal (HZ)</option>
@@ -65,27 +68,27 @@
         <input id="ang_nom" class="border rounded p-2" placeholder="Ângulo nominal (°)" />
         <input id="ang_f1" class="border rounded p-2" placeholder="F1 (°)" />
         <input id="ang_f2" class="border rounded p-2" placeholder="F2 (°)" />
-        <input id="ang_obs" class="border rounded p-2 col-span-2" placeholder="Observações" />
+        <input id="ang_obs" class="border rounded p-2 col-span-2 md:col-span-4" placeholder="Observações" />
         <label class="flex items-center gap-2"><input id="ang_usar" type="checkbox" checked /> usar?</label>
       </div>
-      <div class="mt-2 flex gap-2">
+      <div class="mt-3 flex gap-2">
         <button class="px-3 py-2 rounded bg-emerald-600 text-white" onclick="addAng()">Adicionar</button>
       </div>
     </section>
 
-    <!-- Processar + Relatório -->
-    <section class="bg-white rounded-xl shadow p-3">
-      <h2 class="font-semibold mb-2">4) Processar e Relatar</h2>
+    <!-- 4) Processar e Relatar -->
+    <section class="bg-white rounded-2xl shadow p-4">
+      <h2 class="font-semibold mb-3">4) Processar e Relatar</h2>
       <div class="grid grid-cols-2 gap-2 text-sm">
         <input id="run_calibId" class="border rounded p-2 col-span-2" placeholder="calibId" />
       </div>
-      <div class="mt-2 flex gap-2 flex-wrap">
+      <div class="mt-3 flex gap-2 flex-wrap">
         <button class="px-3 py-2 rounded bg-violet-600 text-white" onclick="calcular()">Calcular resultados</button>
         <button class="px-3 py-2 rounded bg-slate-700 text-white" onclick="relatorio()">Gerar relatório</button>
         <button class="px-3 py-2 rounded bg-amber-600 text-white" onclick="carregar()">Carregar estado</button>
       </div>
 
-      <div id="out" class="text-xs text-slate-600 mt-2 whitespace-pre-wrap"></div>
+      <div id="out" class="text-xs text-slate-600 mt-3 whitespace-pre-wrap"></div>
 
       <div id="pane_results" class="hidden mt-3 border rounded-lg p-3">
         <div class="font-semibold mb-2">Resultados calculados</div>
@@ -106,208 +109,119 @@
         <div>Documento: <a id="link_doc" class="text-blue-700 underline" target="_blank" rel="noopener">abrir</a></div>
         <div>PDF: <a id="link_pdf" class="text-blue-700 underline" target="_blank" rel="noopener">baixar</a></div>
       </div>
-
-      <div id="pane_tables" class="hidden mt-3 space-y-3">
-        <div>
-          <div class="font-semibold mb-1">Leituras EDM</div>
-          <div id="tbl_edm" class="overflow-auto border rounded"></div>
-        </div>
-        <div>
-          <div class="font-semibold mb-1">Ângulos HZ</div>
-          <div id="tbl_hz" class="overflow-auto border rounded"></div>
-        </div>
-        <div>
-          <div class="font-semibold mb-1">Ângulos V</div>
-          <div id="tbl_v" class="overflow-auto border rounded"></div>
-        </div>
-      </div>
     </section>
   </div>
 
   <script>
+    const API_BASE = 'https://script.google.com/macros/s/AKfycbwuJwBdEiN8rk3LgwOsWHoovbTqiI9aUfpUOMwTfJsu9JYazNCxdQiZgDtS8vibDKym/exec';
+
+    // Envia como x-www-form-urlencoded (sem preflight CORS)
+    async function callAPI(action, payload) {
+      const body = new URLSearchParams({ data: JSON.stringify({ action, payload }) });
+      const res = await fetch(API_BASE, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+        body
+      });
+      try { return await res.json(); } catch(e) { return { ok:false, error:'Resposta inválida do servidor.' }; }
+    }
+
+    function show(el){ el.classList.remove('hidden'); }
     function val(id){ return document.getElementById(id).value; }
     function chk(id){ return document.getElementById(id).checked; }
-    function show(el){ el.classList.remove('hidden'); }
-    function hide(el){ el.classList.add('hidden'); }
 
-    function novaCalibracao(){
+    (async () => {
+      try {
+        const res = await fetch(API_BASE + '?ping=1');
+        if (res.ok) document.getElementById('status').innerText = 'online';
+      } catch(e){}
+    })();
+
+    async function novaCalibracao(){
       const form = {
-        calibId: val('calibId'),
-        data: val('data'),
-        cliente: val('cliente'),
-        cnpj: val('cnpj'),
-        instrumento: val('instrumento') || 'Estação Total',
-        fabricante: val('fabricante'),
-        modelo: val('modelo'),
-        ns: val('ns'),
-        res_ang_arcsec: val('res'),
-        obs: val('obs')
+        calibId: val('calibId'), data: val('data'), cliente: val('cliente'), cnpj: val('cnpj'),
+        instrumento: val('instrumento') || 'Estação Total', fabricante: val('fabricante'),
+        modelo: val('modelo'), ns: val('ns'), res_ang_arcsec: val('res'), obs: val('obs')
       };
-      google.script.run.withSuccessHandler(()=>{
-        document.getElementById('out').innerText = 'Calibração criada.';
-      }).withFailureHandler(e=>{
-        document.getElementById('out').innerText = 'Erro: ' + e.message;
-      }).newCalibration(form);
+      const r = await callAPI('newCalibration', form);
+      document.getElementById('out').innerText = JSON.stringify(r, null, 2);
     }
 
-    function addEdm(){
+    async function addEdm(){
       const row = {
-        calibId: val('edm_calibId'),
-        ponto: val('edm_ponto'),
-        dist_nom_m: val('edm_dn'),
-        dist_lida_m: val('edm_dl'),
-        face: val('edm_face'),
-        rep: val('edm_rep'),
-        temp_C: val('edm_t'),
-        UR_percent: val('edm_ur'),
-        press_hPa: val('edm_p'),
-        obs: val('edm_obs'),
-        usar: chk('edm_usar')
+        calibId: val('edm_calibId'), ponto: val('edm_ponto'), rep: val('edm_rep'),
+        dist_nom_m: val('edm_dn'), dist_lida_m: val('edm_dl'), face: val('edm_face'),
+        temp_C: val('edm_t'), UR_percent: val('edm_ur'), press_hPa: val('edm_p'),
+        obs: val('edm_obs'), usar: chk('edm_usar')
       };
-      google.script.run.withSuccessHandler(r=>{
-        document.getElementById('out').innerText = 'EDM adicionado: ' + JSON.stringify(r);
-      }).withFailureHandler(e=>{
-        document.getElementById('out').innerText = 'Erro: ' + e.message;
-      }).addEdmRows([row]);
+      const r = await callAPI('addEdmRows', [row]);
+      document.getElementById('out').innerText = JSON.stringify(r, null, 2);
     }
 
-    function addAng(){
+    async function addAng(){
       const row = {
-        calibId: val('ang_calibId'),
-        conjunto: val('ang_conj'),
-        alvo: val('ang_alvo'),
-        ang_nom_deg: val('ang_nom'),
-        F1_deg: val('ang_f1'),
-        F2_deg: val('ang_f2'),
-        obs: val('ang_obs'),
-        usar: chk('ang_usar')
+        calibId: val('ang_calibId'), conjunto: val('ang_conj'), alvo: val('ang_alvo'),
+        ang_nom_deg: val('ang_nom'), F1_deg: val('ang_f1'), F2_deg: val('ang_f2'),
+        obs: val('ang_obs'), usar: chk('ang_usar')
       };
       const tipo = document.getElementById('ang_tipo').value;
-      google.script.run.withSuccessHandler(r=>{
-        document.getElementById('out').innerText = 'Ângulo ('+tipo+') adicionado: ' + JSON.stringify(r);
-      }).withFailureHandler(e=>{
-        document.getElementById('out').innerText = 'Erro: ' + e.message;
-      }).addAngleRows([row], tipo);
+      const r = await callAPI('addAngleRows', { rows:[row], tipo });
+      document.getElementById('out').innerText = JSON.stringify(r, null, 2);
     }
 
-    function calcular(){
+    async function calcular(){
       const id = val('run_calibId');
-      google.script.run.withSuccessHandler(r=>{
-        document.getElementById('out').innerText = 'OK: ' + JSON.stringify(r, null, 2);
-        if (r && r.ok){
-          document.getElementById('r_d0').innerText = r.d0_mm ?? '';
-          document.getElementById('r_k').innerText = r.k_ppm ?? '';
-          document.getElementById('r_C').innerText = r.C_arcsec ?? '';
-          document.getElementById('r_i').innerText = r.i_arcsec ?? '';
-          document.getElementById('r_edmN').innerText = r.edmN ?? '';
-          document.getElementById('r_angN').innerText = r.angN ?? '';
+      const r = await callAPI('computeAll', { calibId: id });
+      document.getElementById('out').innerText = JSON.stringify(r, null, 2);
+      if (r && r.ok){
+        document.getElementById('r_d0').innerText = r.d0_mm ?? '';
+        document.getElementById('r_k').innerText = r.k_ppm ?? '';
+        document.getElementById('r_C').innerText = r.C_arcsec ?? '';
+        document.getElementById('r_i').innerText = r.i_arcsec ?? '';
+        document.getElementById('r_edmN').innerText = r.edmN ?? '';
+        document.getElementById('r_angN').innerText = r.angN ?? '';
+        show(document.getElementById('pane_results'));
+      }
+    }
+
+    async function relatorio(){
+      const id = val('run_calibId');
+      const r = await callAPI('generateReport', { calibId: id });
+      document.getElementById('out').innerText = JSON.stringify(r, null, 2);
+      if (r && r.ok){
+        const a1 = document.getElementById('link_doc');
+        const a2 = document.getElementById('link_pdf');
+        if (r.docUrl) a1.href = r.docUrl;
+        if (r.pdfUrl) a2.href = r.pdfUrl;
+        show(document.getElementById('pane_links'));
+      }
+    }
+
+    async function carregar(){
+      const id = val('run_calibId');
+      const r = await callAPI('getState', { calibId: id });
+      document.getElementById('out').innerText = JSON.stringify(r, null, 2);
+      if (r && r.ok && r.data){
+        const st = r.data;
+        if (st.results){
+          document.getElementById('r_d0').innerText = st.results.d0_mm ?? '';
+          document.getElementById('r_k').innerText = st.results.k_ppm ?? '';
+          document.getElementById('r_Ud0').innerText = st.results.U_d0_mm ?? '';
+          document.getElementById('r_Uk').innerText = st.results.U_k_ppm ?? '';
+          document.getElementById('r_C').innerText = st.results.C_arcsec ?? '';
+          document.getElementById('r_i').innerText = st.results.i_arcsec ?? '';
+          document.getElementById('r_edmN').innerText = (st.edm || []).length;
+          document.getElementById('r_angN').innerText = (st.hz || []).length + (st.v || []).length;
           show(document.getElementById('pane_results'));
         }
-      }).withFailureHandler(e=>{
-        document.getElementById('out').innerText = 'Erro: ' + e.message;
-      }).computeAll(id);
-    }
-
-    function relatorio(){
-      const id = val('run_calibId');
-      google.script.run.withSuccessHandler(r=>{
-        const o = document.getElementById('out');
-        o.innerText = 'Relatório gerado: ' + JSON.stringify(r, null, 2);
-        if (r && r.ok){
+        if (st.rel){
           const a1 = document.getElementById('link_doc');
           const a2 = document.getElementById('link_pdf');
-          if (r.docUrl) a1.href = r.docUrl;
-          if (r.pdfUrl) a2.href = r.pdfUrl;
+          if (st.rel.doc_url) a1.href = st.rel.doc_url;
+          if (st.rel.pdf_url) a2.href = st.rel.pdf_url;
           show(document.getElementById('pane_links'));
         }
-      }).withFailureHandler(e=>{
-        document.getElementById('out').innerText = 'Erro: ' + e.message;
-      }).generateReport(id);
-    }
-
-    function carregar(){
-      const id = val('run_calibId');
-      google.script.run.withSuccessHandler(st=>{
-        try{
-          document.getElementById('out').innerText = 'Estado carregado.';
-          renderTables_(st);
-          if (st && st.results){
-            document.getElementById('r_d0').innerText = st.results.d0_mm ?? '';
-            document.getElementById('r_k').innerText = st.results.k_ppm ?? '';
-            document.getElementById('r_Ud0').innerText = st.results.U_d0_mm ?? '';
-            document.getElementById('r_Uk').innerText = st.results.U_k_ppm ?? '';
-            document.getElementById('r_C').innerText = st.results.C_arcsec ?? '';
-            document.getElementById('r_i').innerText = st.results.i_arcsec ?? '';
-            document.getElementById('r_edmN').innerText = (st.edm || []).length;
-            document.getElementById('r_angN').innerText = (st.hz || []).length + (st.v || []).length;
-            show(document.getElementById('pane_results'));
-          }
-          if (st && st.rel){
-            const a1 = document.getElementById('link_doc');
-            const a2 = document.getElementById('link_pdf');
-            if (st.rel.doc_url) a1.href = st.rel.doc_url;
-            if (st.rel.pdf_url) a2.href = st.rel.pdf_url;
-            show(document.getElementById('pane_links'));
-          }
-        }catch(e){
-          document.getElementById('out').innerText = 'Erro ao renderizar: ' + e.message;
-        }
-      }).withFailureHandler(e=>{
-        document.getElementById('out').innerText = 'Erro: ' + e.message;
-      }).getState(id);
-    }
-
-    function renderTables_(st){
-      const tblEDM = document.getElementById('tbl_edm');
-      const tblHZ  = document.getElementById('tbl_hz');
-      const tblV   = document.getElementById('tbl_v');
-      tblEDM.innerHTML = ''; tblHZ.innerHTML = ''; tblV.innerHTML = '';
-
-      function mkTable(headers, rows){
-        const wrap = document.createElement('div');
-        const table = document.createElement('table');
-        table.className = 'min-w-full text-xs';
-        const thead = document.createElement('thead');
-        thead.className = 'bg-slate-100';
-        const trh = document.createElement('tr');
-        headers.forEach(h => {
-          const th = document.createElement('th');
-          th.className = 'px-2 py-1 text-left border-b';
-          th.textContent = h;
-          trh.appendChild(th);
-        });
-        thead.appendChild(trh);
-        table.appendChild(thead);
-
-        const tbody = document.createElement('tbody');
-        rows.forEach(r => {
-          const tr = document.createElement('tr');
-          r.forEach(c => {
-            const td = document.createElement('td');
-            td.className = 'px-2 py-1 border-b';
-            td.textContent = c==null ? '' : String(c);
-            tr.appendChild(td);
-          });
-          tbody.appendChild(tr);
-        });
-        table.appendChild(tbody);
-        wrap.appendChild(table);
-        return wrap;
       }
-
-      if (st && Array.isArray(st.edm)){
-        const rows = st.edm.map(r => [r[1], r[2], r[3], r[10], r[9]]);
-        tblEDM.appendChild(mkTable(['Ponto','Dist. Nominal (m)','Dist. Lida (m)','Erro (mm)','Obs'], rows));
-      }
-      if (st && Array.isArray(st.hz)){
-        const rows = st.hz.map(r => [r[1], r[2], r[3], r[4], r[5], r[7]]);
-        tblHZ.appendChild(mkTable(['Conjunto','Alvo','Âng. Nom. (°)','F1 (°)','F2 (°)','Erro (")'], rows));
-      }
-      if (st && Array.isArray(st.v)){
-        const rows = st.v.map(r => [r[1], r[2], r[3], r[4], r[5], r[7]]);
-        tblV.appendChild(mkTable(['Conjunto','Alvo','Âng. Nom. (°)','F1 (°)','F2 (°)','Erro (")'], rows));
-      }
-      show(document.getElementById('pane_tables'));
     }
   </script>
 </body>
