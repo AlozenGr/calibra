@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calibração – Estação Total</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-50 text-slate-800">
+  <div class="max-w-5xl mx-auto p-4 md:p-8 space-y-6">
+    <header class="flex items-center justify-between">
+      <h1 class="text-2xl font-bold">Calibração – Estação Total</h1>
+      <span id="status" class="text-xs text-slate-500">offline</span>
+    </header>
+
+    <!-- 1) Nova Calibração -->
+    <section class="bg-white shadow rounded-2xl p-4">
+      <h2 class="font-semibold mb-3">1) Nova Calibração</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+        <input id="calibId" class="border p-2 rounded" placeholder="ID (ex: CAL-001)" />
+        <input id="data" type="date" class="border p-2 rounded" />
+        <input id="cliente" class="border p-2 rounded col-span-2" placeholder="Cliente" />
+        <input id="cnpj" class="border p-2 rounded" placeholder="CNPJ/CPF" />
+        <input id="instrumento" class="border p-2 rounded" placeholder="Instrumento" />
+        <input id="fabricante" class="border p-2 rounded" placeholder="Fabricante" />
+        <input id="modelo" class="border p-2 rounded" placeholder="Modelo" />
+        <input id="ns" class="border p-2 rounded" placeholder="Nº SÉRIE" />
+        <input id="res" class="border p-2 rounded" placeholder='Resolução angular (")' />
+        <input id="obs" class="border p-2 rounded col-span-2" placeholder="Observações" />
+      </div>
+      <button onclick="novaCalibracao()" class="mt-3 bg-blue-600 text-white px-4 py-2 rounded">Salvar</button>
+    </section>
+
+    <!-- EDM -->
+    <section class="bg-white shadow rounded-2xl p-4">
+      <h2 class="font-semibold mb-3">2) Leituras EDM</h2>
+      <div class="grid grid-cols-2 md:grid-cols-6 gap-2 text-sm">
+        <input id="edm_calibId" class="border p-2 rounded" placeholder="calibId" />
+        <input id="edm_ponto" class="border p-2 rounded" placeholder="Ponto" />
+        <input id="edm_rep" class="border p-2 rounded" placeholder="Repetição" />
+        <input id="edm_dn" class="border p-2 rounded" placeholder="Dist. nominal (m)" />
+        <input id="edm_dl" class="border p-2 rounded" placeholder="Dist. lida (m)" />
+        <input id="edm_face" class="border p-2 rounded" placeholder="Face" />
+        <input id="edm_t" class="border p-2 rounded" placeholder="Temperatura (°C)" />
+        <input id="edm_ur" class="border p-2 rounded" placeholder="UR (%)" />
+        <input id="edm_p" class="border p-2 rounded" placeholder="Pressão (hPa)" />
+        <input id="edm_obs" class="border p-2 rounded col-span-2 md:col-span-4" placeholder="Observações" />
+        <label class="flex gap-2 items-center"><input id="edm_usar" type="checkbox" checked /> usar</label>
+      </div>
+      <button onclick="addEdm()" class="mt-3 bg-emerald-600 text-white px-4 py-2 rounded">Adicionar</button>
+    </section>
+
+    <!-- Ângulos -->
+    <section class="bg-white shadow rounded-2xl p-4">
+      <h2 class="font-semibold mb-3">3) Leituras Angulares</h2>
+      <div class="grid grid-cols-2 md:grid-cols-6 gap-2 text-sm">
+        <input id="ang_calibId" class="border p-2 rounded" placeholder="calibId" />
+        <select id="ang_tipo" class="border p-2 rounded">
+          <option value="HZ">Horizontal</option>
+          <option value="V">Vertical</option>
+        </select>
+        <input id="ang_conj" class="border p-2 rounded" placeholder="Conjunto" />
+        <input id="ang_alvo" class="border p-2 rounded" placeholder="Alvo" />
+        <input id="ang_nom" class="border p-2 rounded" placeholder="Ângulo nominal" />
+        <input id="ang_f1" class="border p-2 rounded" placeholder="F1" />
+        <input id="ang_f2" class="border p-2 rounded" placeholder="F2" />
+        <input id="ang_obs" class="border p-2 rounded col-span-2 md:col-span-4" placeholder="Observações" />
+        <label class="flex gap-2 items-center"><input id="ang_usar" type="checkbox" checked /> usar</label>
+      </div>
+      <button onclick="addAng()" class="mt-3 bg-emerald-600 text-white px-4 py-2 rounded">Adicionar</button>
+    </section>
+
+    <!-- PROCESSAR -->
+    <section class="bg-white shadow rounded-2xl p-4">
+      <h2 class="font-semibold mb-3">4) Processar</h2>
+      <input id="run_calibId" class="border p-2 rounded w-full" placeholder="calibId" />
+
+      <div class="mt-3 flex gap-2 flex-wrap">
+        <button onclick="calcular()" class="bg-violet-600 text-white px-3 py-2 rounded">Calcular</button>
+        <button onclick="relatorio()" class="bg-slate-700 text-white px-3 py-2 rounded">Gerar Relatório</button>
+        <button onclick="carregar()" class="bg-amber-600 text-white px-3 py-2 rounded">Carregar</button>
+      </div>
+
+      <pre id="out" class="mt-3 text-xs whitespace-pre-wrap text-slate-600"></pre>
+
+      <div id="pane_results" class="hidden mt-4 border rounded p-3 text-sm">
+        <h3 class="font-semibold mb-2">Resultados</h3>
+        <div class="grid grid-cols-2 gap-2">
+          <div>d₀ (mm): <span id="r_d0"></span></div>
+          <div>k (ppm): <span id="r_k"></span></div>
+          <div>C ("): <span id="r_C"></span></div>
+          <div>i ("): <span id="r_i"></span></div>
+        </div>
+      </div>
+
+      <div id="pane_links" class="hidden mt-4 border rounded p-3 text-sm">
+        <h3 class="font-semibold mb-2">Relatório</h3>
+        <div>Doc: <a id="link_doc" target="_blank" class="text-blue-600 underline">abrir</a></div>
+        <div>PDF: <a id="link_pdf" target="_blank" class="text-blue-600 underline">baixar</a></div>
+      </div>
+    </section>
+
+  </div>
+
+<script>
+const API_BASE = "https://script.google.com/macros/s/AKfycbxtNjTBLnBKwFizYNfe_X_ChdKzu8R6Jn9fOwJgvHrI0nPcMMHg_EsqUEx2wccFuY2s/exec";
+
+// Funções JS…
+</script>
+
+</body>
+</html>
