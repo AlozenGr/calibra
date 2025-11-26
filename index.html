@@ -1,423 +1,300 @@
-/**
- * Sistema de Calibração – Estação Total
- * Com etapas ANTES / DEPOIS
- */
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calibração – Estação Total</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
 
-const SHEETS = {
-  CONFIG: 'Config',
-  CALIB: 'Calibracoes',
-  EDM: 'EDM_Dados',
-  HZ: 'Angulos_HZ',
-  V: 'Angulos_V',
-  RES: 'Resultados',
-  REL: 'Relatorio'
-};
+<body class="bg-slate-50 text-slate-800">
+  <div class="max-w-5xl mx-auto p-4 md:p-8 space-y-6">
+    <header class="flex items-center justify-between">
+      <h1 class="text-2xl font-bold">Calibração – Estação Total</h1>
+      <span id="status" class="text-xs text-slate-500">offline</span>
+    </header>
 
-function onOpen() {
-  const ui = SpreadsheetApp.getUi();
-  ui.createMenu('Calibração')
-    .addItem('1) Preparar estrutura', 'setupSheets')
-    .addSeparator()
-    .addItem('Calcular última calibração (ANTES)', 'menuComputeAntes')
-    .addItem('Calcular última calibração (DEPOIS)', 'menuComputeDepois')
-    .addItem('Gerar relatório última calibração', 'menuGenerateReportActive')
-    .addToUi();
-}
+    <!-- 1) Nova Calibração -->
+    <section class="bg-white shadow rounded-2xl p-4">
+      <h2 class="font-semibold mb-3">1) Nova Calibração</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+        <input id="calibId" class="border p-2 rounded" placeholder="ID (ex: CAL-001)" />
+        <input id="data" type="date" class="border p-2 rounded" />
+        <input id="cliente" class="border p-2 rounded col-span-2" placeholder="Cliente" />
+        <input id="cnpj" class="border p-2 rounded" placeholder="CNPJ/CPF" />
+        <input id="instrumento" class="border p-2 rounded" placeholder="Instrumento" />
+        <input id="fabricante" class="border p-2 rounded" placeholder="Fabricante" />
+        <input id="modelo" class="border p-2 rounded" placeholder="Modelo" />
+        <input id="ns" class="border p-2 rounded" placeholder="Nº SÉRIE" />
+        <input id="res" class="border p-2 rounded" placeholder='Resolução angular (")' />
+        <input id="obs" class="border p-2 rounded col-span-2" placeholder="Observações" />
+      </div>
+      <button onclick="novaCalibracao()" class="mt-3 bg-blue-600 text-white px-4 py-2 rounded">
+        Salvar
+      </button>
+    </section>
 
-function spreadsheet() { return SpreadsheetApp.getActiveSpreadsheet(); }
-function byName(name) {
-  const sh = spreadsheet().getSheetByName(name);
-  if (!sh) throw new Error('Aba não encontrada: ' + name);
-  return sh;
-}
+    <!-- 2) EDM -->
+    <section class="bg-white shadow rounded-2xl p-4">
+      <h2 class="font-semibold mb-3">2) Leituras EDM</h2>
+      <div class="grid grid-cols-2 md:grid-cols-6 gap-2 text-sm">
+        <input id="edm_calibId" class="border p-2 rounded" placeholder="calibId" />
+        <input id="edm_ponto" class="border p-2 rounded" placeholder="Ponto" />
+        <input id="edm_rep" class="border p-2 rounded" placeholder="Repetição" />
+        <input id="edm_dn" class="border p-2 rounded" placeholder="Dist. nominal (m)" />
+        <input id="edm_dl" class="border p-2 rounded" placeholder="Dist. lida (m)" />
+        <input id="edm_face" class="border p-2 rounded" placeholder="Face" />
+        <input id="edm_t" class="border p-2 rounded" placeholder="Temperatura (°C)" />
+        <input id="edm_ur" class="border p-2 rounded" placeholder="UR (%)" />
+        <input id="edm_p" class="border p-2 rounded" placeholder="Pressão (hPa)" />
+        <input id="edm_obs" class="border p-2 rounded col-span-2 md:col-span-4" placeholder="Observações" />
+        <label class="flex gap-2 items-center">
+          <input id="edm_usar" type="checkbox" checked /> usar
+        </label>
+      </div>
+      <button onclick="addEdm()" class="mt-3 bg-emerald-600 text-white px-4 py-2 rounded">
+        Adicionar
+      </button>
+    </section>
 
-function setupSheets() {
-  const ss = spreadsheet();
-  const want = Object.values(SHEETS);
-  const have = ss.getSheets().map(s => s.getSheetName());
-  want.forEach(n => { if (!have.includes(n)) ss.insertSheet(n); });
+    <!-- 3) Ângulos -->
+    <section class="bg-white shadow rounded-2xl p-4">
+      <h2 class="font-semibold mb-3">3) Leituras Angulares</h2>
+      <div class="grid grid-cols-2 md:grid-cols-6 gap-2 text-sm">
+        <input id="ang_calibId" class="border p-2 rounded" placeholder="calibId" />
+        <select id="ang_tipo" class="border p-2 rounded">
+          <option value="HZ">Horizontal</option>
+          <option value="V">Vertical</option>
+        </select>
+        <input id="ang_conj" class="border p-2 rounded" placeholder="Conjunto" />
+        <input id="ang_alvo" class="border p-2 rounded" placeholder="Alvo" />
+        <input id="ang_nom" class="border p-2 rounded" placeholder="Ângulo nominal (°)" />
+        <input id="ang_f1" class="border p-2 rounded" placeholder="F1 (°)" />
+        <input id="ang_f2" class="border p-2 rounded" placeholder="F2 (°)" />
+        <input id="ang_obs" class="border p-2 rounded col-span-2 md:col-span-4" placeholder="Observações" />
+        <label class="flex gap-2 items-center">
+          <input id="ang_usar" type="checkbox" checked /> usar
+        </label>
+      </div>
+      <button onclick="addAng()" class="mt-3 bg-emerald-600 text-white px-4 py-2 rounded">
+        Adicionar
+      </button>
+    </section>
 
-  byName(SHEETS.CONFIG).getRange(1,1,10,2).setValues([
-    ['Laboratório', ''],
-    ['CNPJ', ''],
-    ['Endereço', ''],
-    ['Responsável Técnico (CREA)', ''],
-    ['Telefone', ''],
-    ['E-mail', ''],
-    ['Validade Padrão (meses)', '12'],
-    ['Logo URL (opcional)', ''],
-    ['Doc Template ID (opcional)', ''],
-    ['Versão', 'v1.0']
-  ]);
+    <!-- 4) Processar -->
+    <section class="bg-white shadow rounded-2xl p-4">
+      <h2 class="font-semibold mb-3">4) Processar</h2>
 
-  byName(SHEETS.CALIB).getRange(1,1,1,10).setValues([[
-    'calibId','data','cliente','cnpj','instrumento','fabricante','modelo','ns','res_ang_arcsec','obs'
-  ]]);
+      <!-- Etapa ANTES / DEPOIS -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm mb-2">
+        <input id="run_calibId" class="border p-2 rounded" placeholder="calibId" />
+        <select id="fase" class="border p-2 rounded">
+          <option value="ANTES">Situação atual (ANTES da calibração)</option>
+          <option value="DEPOIS">Após calibração (DEPOIS da intervenção)</option>
+        </select>
+      </div>
 
-  byName(SHEETS.EDM).getRange(1,1,1,12).setValues([[
-    'calibId','ponto','dist_nom_m','dist_lida_m','face','rep','temp_C','UR_%','press_hPa','obs','erro_mm','usar?'
-  ]]);
+      <div class="mt-3 flex gap-2 flex-wrap">
+        <button onclick="calcular()" class="bg-violet-600 text-white px-3 py-2 rounded">
+          Calcular
+        </button>
+        <button onclick="relatorio()" class="bg-slate-700 text-white px-3 py-2 rounded">
+          Gerar Relatório
+        </button>
+        <button onclick="carregar()" class="bg-amber-600 text-white px-3 py-2 rounded">
+          Carregar
+        </button>
+      </div>
 
-  byName(SHEETS.HZ).getRange(1,1,1,10).setValues([[
-    'calibId','conjunto','alvo','ang_nom_deg','F1_deg','F2_deg','obs','erro_arcsec','C_arcsec','usar?'
-  ]]);
+      <pre id="out" class="mt-3 text-xs whitespace-pre-wrap text-slate-600"></pre>
 
-  byName(SHEETS.V).getRange(1,1,1,10).setValues([[
-    'calibId','conjunto','alvo','ang_nom_deg','F1_deg','F2_deg','obs','erro_arcsec','i_arcsec','usar?'
-  ]]);
+      <!-- Resultados ANTES / DEPOIS -->
+      <div id="pane_results" class="hidden mt-4 border rounded p-3 text-sm space-y-3">
+        <h3 class="font-semibold mb-2">Resultados da calibração</h3>
 
-  // OBS: agora tem coluna "fase"
-  byName(SHEETS.RES).getRange(1,1,1,17).setValues([[
-    'calibId','fase','d0_mm','k_ppm','U_d0_mm','U_k_ppm','C_arcsec','i_arcsec',
-    'comp_ok','edm_n','ang_n','data_calc','usuario','recom_val','coment','doc_url','pdf_url'
-  ]]);
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- ANTES -->
+          <div>
+            <div class="font-semibold mb-1">Situação atual (ANTES)</div>
+            <div class="text-xs text-slate-500 mb-1">
+              Estado do equipamento antes da intervenção
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>d₀ (mm): <span id="r_d0_antes"></span></div>
+              <div>k (ppm): <span id="r_k_antes"></span></div>
+              <div>C ("): <span id="r_C_antes"></span></div>
+              <div>i ("): <span id="r_i_antes"></span></div>
+            </div>
+          </div>
 
-  byName(SHEETS.REL).getRange(1,1,1,6).setValues([[
-    'calibId','gerado_em','doc_url','pdf_url','status','msg'
-  ]]);
+          <!-- DEPOIS -->
+          <div>
+            <div class="font-semibold mb-1">Após calibração (DEPOIS)</div>
+            <div class="text-xs text-slate-500 mb-1">
+              Estado do equipamento após ajustes/aferição
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>d₀ (mm): <span id="r_d0_depois"></span></div>
+              <div>k (ppm): <span id="r_k_depois"></span></div>
+              <div>C ("): <span id="r_C_depois"></span></div>
+              <div>i ("): <span id="r_i_depois"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-  return 'Estrutura criada/atualizada.';
-}
+      <div id="pane_links" class="hidden mt-4 border rounded p-3 text-sm">
+        <h3 class="font-semibold mb-2">Relatório</h3>
+        <div>Doc: <a id="link_doc" target="_blank" class="text-blue-600 underline">abrir</a></div>
+        <div>PDF: <a id="link_pdf" target="_blank" class="text-blue-600 underline">baixar</a></div>
+      </div>
+    </section>
 
-function getActiveCalibId_() {
-  const sh = byName(SHEETS.CALIB);
-  const last = sh.getLastRow();
-  if (last < 2) throw new Error('Nenhuma calibração cadastrada.');
-  const calibId = sh.getRange(last, 1).getValue();
-  if (!calibId) throw new Error('calibId inválido na última linha.');
-  return calibId;
-}
+  </div>
 
-function menuComputeAntes() {
-  const calibId = getActiveCalibId_();
-  return computeAll({ calibId, fase: 'ANTES' });
-}
-function menuComputeDepois() {
-  const calibId = getActiveCalibId_();
-  return computeAll({ calibId, fase: 'DEPOIS' });
-}
-function menuGenerateReportActive() {
-  const calibId = getActiveCalibId_();
-  return generateReport(calibId);
-}
+<script>
+const API_BASE = "https://script.google.com/macros/s/AKfycbxtNjTBLnBKwFizYNfe_X_ChdKzu8R6Jn9fOwJgvHrI0nPcMMHg_EsqUEx2wccFuY2s/exec";
 
-/** ===== Utilitários ===== */
-function avg_(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
-function round_(v,d){
-  if (v==='' || v===null || isNaN(v)) return '';
-  const m = Math.pow(10,d||0);
-  return Math.round(v*m)/m;
-}
-function linearRegression_(x,y){
-  const n=x.length;
-  const sx=x.reduce((a,b)=>a+b,0);
-  const sy=y.reduce((a,b)=>a+b,0);
-  const sxx=x.reduce((a,b)=>a+b*b,0);
-  const sxy=x.reduce((a,b,i)=>a+b*y[i],0);
-  const denom=n*sxx - sx*sx;
-  const slope=denom?(n*sxy - sx*sy)/denom:0;
-  const intercept=(sy - slope*sx)/n;
-  const yhat=x.map(v=>intercept + slope*v);
-  const rss=y.reduce((a,b,i)=>a+Math.pow(b-yhat[i],2),0);
-  const std=Math.sqrt(rss/Math.max(1,n-2));
-  return {slope,intercept,std};
-}
+function v(id){ return document.getElementById(id).value; }
+function c(id){ return document.getElementById(id).checked; }
+function show(el){ el.classList.remove("hidden"); }
 
-/** ===== CRUD ===== */
-function newCalibration(form){
-  byName(SHEETS.CALIB).appendRow([
-    form.calibId, form.data, form.cliente, form.cnpj, form.instrumento,
-    form.fabricante, form.modelo, form.ns, Number(form.res_ang_arcsec||''), form.obs||''
-  ]);
-  return {ok:true};
-}
+const outEl = document.getElementById("out");
 
-function addEdmRows(rows){
-  const sh = byName(SHEETS.EDM);
-  const data = rows.map(r=>[
-    r.calibId, r.ponto, Number(r.dist_nom_m), Number(r.dist_lida_m),
-    r.face||'', Number(r.rep||1), Number(r.temp_C||''), Number(r.UR_percent||''),
-    Number(r.press_hPa||''), r.obs||'', '', (r.usar===false ? 'N':'S')
-  ]);
-  sh.getRange(sh.getLastRow()+1,1,data.length,data[0].length).setValues(data);
-  return {ok:true, n:data.length};
-}
-
-function addAngleRows(rows,tipo){
-  const sh=byName(tipo==='HZ'?SHEETS.HZ:SHEETS.V);
-  const data=rows.map(r=>[
-    r.calibId,r.conjunto||'',r.alvo||'',Number(r.ang_nom_deg||''),
-    Number(r.F1_deg||''),Number(r.F2_deg||''),r.obs||'','', '',(r.usar===false?'N':'S')
-  ]);
-  sh.getRange(sh.getLastRow()+1,1,data.length,data[0].length).setValues(data);
-  return {ok:true,n:data.length};
-}
-
-/** ===== Estado (inclui ANTES / DEPOIS) ===== */
-function getState(calibId){
-  const state={calib:null,edm:[],hz:[],v:[],results:{antes:null,depois:null},rel:null};
-
-  const c = byName(SHEETS.CALIB).getDataRange().getValues();
-  const ic = c.findIndex((r,i)=>i>0 && r[0]==calibId);
-  if(ic>0){
-    state.calib={
-      calibId:c[ic][0],data:c[ic][1],cliente:c[ic][2],cnpj:c[ic][3],
-      instrumento:c[ic][4],fabricante:c[ic][5],modelo:c[ic][6],
-      ns:c[ic][7],res_ang_arcsec:c[ic][8],obs:c[ic][9]
-    };
-  }
-
-  function getRows(sh){
-    return byName(sh).getDataRange().getValues().slice(1).filter(r=>r[0]==calibId);
-  }
-
-  state.edm=getRows(SHEETS.EDM);
-  state.hz =getRows(SHEETS.HZ);
-  state.v  =getRows(SHEETS.V);
-
-  const R=byName(SHEETS.RES).getDataRange().getValues();
-  const rowsRes = R.slice(1).filter(r=>r[0]==calibId);
-  rowsRes.forEach(r=>{
-    const fase = String(r[1]||'').toUpperCase();
-    const obj = {
-      d0_mm:r[2],k_ppm:r[3],U_d0_mm:r[4],U_k_ppm:r[5],
-      C_arcsec:r[6],i_arcsec:r[7],comp_ok:r[8],
-      edm_n:r[9],ang_n:r[10],data_calc:r[11],
-      usuario:r[12],recom_val:r[13],coment:r[14],
-      doc_url:r[15],pdf_url:r[16]
-    };
-    if (fase === 'ANTES')  state.results.antes = obj;
-    if (fase === 'DEPOIS') state.results.depois = obj;
+async function callAPI(action, payload = {}) {
+  const body = new URLSearchParams({ data: JSON.stringify({ action, payload }) });
+  const res = await fetch(API_BASE, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+    body
   });
-
-  const L=byName(SHEETS.REL).getDataRange().getValues();
-  const il=L.findIndex((r,i)=>i>0 && r[0]==calibId);
-  if(il>0){
-    state.rel={
-      gerado_em:L[il][1],doc_url:L[il][2],pdf_url:L[il][3],status:L[il][4],msg:L[il][5]
-    };
+  try {
+    return await res.json();
+  } catch (e) {
+    return { ok: false, error: "Resposta inválida do servidor" };
   }
-
-  return state;
 }
 
-/** ===== Cálculo principal (com fase) ===== */
-function computeAll(input){
-  // input pode ser string (calibId) ou objeto
-  let calibId, fase;
-  if (typeof input === 'string') {
-    calibId = input;
-    fase = 'ANTES';
-  } else {
-    calibId = input.calibId;
-    fase = (input.fase || 'ANTES').toUpperCase();
+// ping inicial
+(async () => {
+  try {
+    const r = await fetch(API_BASE + "?ping=1");
+    if (r.ok) document.getElementById("status").innerText = "online";
+  } catch (e) {}
+})();
+
+// 1) Nova calibração
+async function novaCalibracao() {
+  const r = await callAPI("newCalibration", {
+    calibId: v("calibId"),
+    data: v("data"),
+    cliente: v("cliente"),
+    cnpj: v("cnpj"),
+    instrumento: v("instrumento"),
+    fabricante: v("fabricante"),
+    modelo: v("modelo"),
+    ns: v("ns"),
+    res_ang_arcsec: v("res"),
+    obs: v("obs")
+  });
+  outEl.innerText = JSON.stringify(r, null, 2);
+}
+
+// 2) EDM
+async function addEdm() {
+  const r = await callAPI("addEdmRows", [{
+    calibId: v("edm_calibId"),
+    ponto: v("edm_ponto"),
+    rep: v("edm_rep"),
+    dist_nom_m: v("edm_dn"),
+    dist_lida_m: v("edm_dl"),
+    face: v("edm_face"),
+    temp_C: v("edm_t"),
+    UR_percent: v("edm_ur"),
+    press_hPa: v("edm_p"),
+    obs: v("edm_obs"),
+    usar: c("edm_usar")
+  }]);
+  outEl.innerText = JSON.stringify(r, null, 2);
+}
+
+// 3) Ângulos
+async function addAng() {
+  const r = await callAPI("addAngleRows", {
+    rows: [{
+      calibId: v("ang_calibId"),
+      conjunto: v("ang_conj"),
+      alvo: v("ang_alvo"),
+      ang_nom_deg: v("ang_nom"),
+      F1_deg: v("ang_f1"),
+      F2_deg: v("ang_f2"),
+      obs: v("ang_obs"),
+      usar: c("ang_usar")
+    }],
+    tipo: document.getElementById("ang_tipo").value
+  });
+  outEl.innerText = JSON.stringify(r, null, 2);
+}
+
+// 4) Calcular
+async function calcular() {
+  const r = await callAPI("computeAll", {
+    calibId: v("run_calibId"),
+    fase: v("fase")   // ANTES ou DEPOIS
+  });
+  outEl.innerText = JSON.stringify(r, null, 2);
+  if (r && r.ok) {
+    await carregar(); // carrega estado completo, incluindo ANTES/DEPOIS
   }
+}
 
-  const user=(Session.getActiveUser() && Session.getActiveUser().getEmail()) || 'desconhecido';
-  const now=new Date();
-
-  // EDM
-  const shE=byName(SHEETS.EDM);
-  const allE=shE.getDataRange().getValues();
-  const E=allE.slice(1).filter(r=>r[0]==calibId && String(r[11]||'S').toUpperCase()!=='N');
-  const edmN=E.length;
-  if (edmN < 3) {
-    return { ok:false, error:'Mínimo de 3 leituras EDM necessárias para processar.' };
+// 5) Gerar relatório
+async function relatorio() {
+  const r = await callAPI("generateReport", {
+    calibId: v("run_calibId")
+  });
+  outEl.innerText = JSON.stringify(r, null, 2);
+  if (r && r.ok) {
+    const a1 = document.getElementById("link_doc");
+    const a2 = document.getElementById("link_pdf");
+    if (r.docUrl) a1.href = r.docUrl;
+    if (r.pdfUrl) a2.href = r.pdfUrl;
+    show(document.getElementById("pane_links"));
   }
+}
 
-  let d0='',k='',U_d0='',U_k='';
-  if(E.length>=2){
-    const x=[],y=[];
-    E.forEach(r=>{
-      const dn=Number(r[2]), dl=Number(r[3]);
-      x.push(dn);
-      y.push((dl-dn)*1000);
-    });
-    const reg=linearRegression_(x,y);
-    d0=round_(reg.intercept,3);
-    k =round_(reg.slope*1000,3);
-    const s=reg.std;
-    U_d0=round_(2*s,3);
-    U_k = x.length ? round_((2*s / avg_(x))*1000,3) : '';
+// 6) Carregar estado (preenche ANTES/DEPOIS)
+async function carregar() {
+  const r = await callAPI("getState", {
+    calibId: v("run_calibId")
+  });
+  outEl.innerText = JSON.stringify(r, null, 2);
 
-    // grava erro_mm
-    for(let i=1;i<allE.length;i++){
-      if(allE[i][0]==calibId){
-        const dn=Number(allE[i][2]), dl=Number(allE[i][3]);
-        shE.getRange(i+1,11).setValue(round_((dl-dn)*1000,3));
-      }
+  if (r && r.ok && r.data) {
+    const st = r.data;
+    const resAntes  = st.results && st.results.antes  ? st.results.antes  : null;
+    const resDepois = st.results && st.results.depois ? st.results.depois : null;
+
+    document.getElementById("r_d0_antes").innerText   = resAntes  ? resAntes.d0_mm    : "";
+    document.getElementById("r_k_antes").innerText    = resAntes  ? resAntes.k_ppm    : "";
+    document.getElementById("r_C_antes").innerText    = resAntes  ? resAntes.C_arcsec : "";
+    document.getElementById("r_i_antes").innerText    = resAntes  ? resAntes.i_arcsec : "";
+
+    document.getElementById("r_d0_depois").innerText  = resDepois ? resDepois.d0_mm   : "";
+    document.getElementById("r_k_depois").innerText   = resDepois ? resDepois.k_ppm   : "";
+    document.getElementById("r_C_depois").innerText   = resDepois ? resDepois.C_arcsec: "";
+    document.getElementById("r_i_depois").innerText   = resDepois ? resDepois.i_arcsec: "";
+
+    show(document.getElementById("pane_results"));
+
+    if (st.rel && st.rel.doc_url) {
+      document.getElementById("link_doc").href = st.rel.doc_url;
+      if (st.rel.pdf_url) document.getElementById("link_pdf").href = st.rel.pdf_url;
+      show(document.getElementById("pane_links"));
     }
   }
-
-  // HZ
-  const shH=byName(SHEETS.HZ);
-  const allH=shH.getDataRange().getValues();
-  const H=allH.slice(1).filter(r=>r[0]==calibId && String(r[9]||'S').toUpperCase()!=='N');
-  let C='';
-  if(H.length){
-    const vals=H.map(r=>(Number(r[4])+Number(r[5])-360)/2);
-    C=round_(avg_(vals)*3600,2);
-    H.forEach((r,idx)=>{
-      const err=((Number(r[4])+Number(r[5])-360)/2)*3600;
-      shH.getRange(idx+2,8).setValue(round_(err,2));
-      shH.getRange(idx+2,9).setValue(C);
-    });
-  }
-
-  // V
-  const shV=byName(SHEETS.V);
-  const allV=shV.getDataRange().getValues();
-  const V=allV.slice(1).filter(r=>r[0]==calibId && String(r[9]||'S').toUpperCase()!=='N');
-  let I='';
-  if(V.length){
-    const vals=V.map(r=>(Number(r[4])-(180-Number(r[5])))/2);
-    I=round_(avg_(vals)*3600,2);
-    V.forEach((r,idx)=>{
-      const err=((Number(r[4])-(180-Number(r[5])))/2)*3600;
-      shV.getRange(idx+2,8).setValue(round_(err,2));
-      shV.getRange(idx+2,9).setValue(I);
-    });
-  }
-
-  // grava em Resultados (por fase)
-  const shR=byName(SHEETS.RES);
-  const RS=shR.getDataRange().getValues();
-  let idx = RS.findIndex((r,i)=>i>0 && r[0]==calibId && String(r[1]||'').toUpperCase()===fase);
-  const line=[
-    calibId,fase,d0,k,U_d0,U_k,C,I,'OK',E.length,(H.length+V.length),
-    now,user,'','', '', ''
-  ];
-
-  if(idx>0) shR.getRange(idx+1,1,1,line.length).setValues([line]);
-  else shR.appendRow(line);
-
-  return { ok:true, calibId, fase, d0_mm:d0, k_ppm:k, C_arcsec:C, i_arcsec:I, edmN:E.length, angN:(H.length+V.length) };
 }
+</script>
 
-/** ===== Relatório comparando ANTES / DEPOIS ===== */
-function generateReport(calibId){
-  const cfg=Object.fromEntries(byName(SHEETS.CONFIG).getRange(1,1,10,2).getValues());
-  const lab=cfg['Laboratório']||'';
-
-  const st=getState(calibId);
-  if(!st.calib) throw new Error("calibId não encontrado");
-
-  const doc=DocumentApp.create(`Certificado de Calibração – Estação Total – ${calibId}`);
-  const body=doc.getBody();
-
-  body.appendParagraph((lab?lab+' – ':'')+"Certificado de Calibração")
-      .setHeading(DocumentApp.ParagraphHeading.HEADING1);
-
-  body.appendParagraph(`Calibração: ${calibId} • Data: ${st.calib.data}`);
-  body.appendParagraph(`Cliente: ${st.calib.cliente} (CNPJ: ${st.calib.cnpj})`);
-  body.appendParagraph(`Instrumento: ${st.calib.instrumento} • Fabricante: ${st.calib.fabricante} • Modelo: ${st.calib.modelo} • Nº Série: ${st.calib.ns}`);
-  body.appendParagraph(" ");
-
-  // Tabela comparativa ANTES / DEPOIS
-  body.appendParagraph("Resumo dos resultados – Situação ANTES e DEPOIS da calibração")
-      .setHeading(DocumentApp.ParagraphHeading.HEADING2);
-
-  const rA = st.results.antes  || {};
-  const rD = st.results.depois || {};
-
-  const tComp = body.appendTable([
-    ['Parâmetro','Situação atual (ANTES)','Após calibração (DEPOIS)'],
-    ['d₀ (mm)', String(rA.d0_mm||''), String(rD.d0_mm||'')],
-    ['k (ppm)', String(rA.k_ppm||''), String(rD.k_ppm||'')],
-    ['Descolimação C (")', String(rA.C_arcsec||''), String(rD.C_arcsec||'')],
-    ['Índice vertical i (")', String(rA.i_arcsec||''), String(rD.i_arcsec||'')]
-  ]);
-  tComp.setBorderWidth(1);
-
-  body.appendParagraph("Leituras EDM").setHeading(DocumentApp.ParagraphHeading.HEADING2);
-  const tE = body.appendTable([['Ponto','Dist. Nominal (m)','Dist. Lida (m)','Erro (mm)','Obs']]);
-  (st.edm||[]).forEach(r=>{
-    tE.appendTableRow([
-      String(r[1]||''), String(r[2]||''), String(r[3]||''), String(r[10]||''), String(r[9]||'')
-    ]);
-  });
-
-  body.appendParagraph("Leituras Ângulo Horizontal (F1/F2)").setHeading(DocumentApp.ParagraphHeading.HEADING2);
-  const tH = body.appendTable([['Conjunto','Alvo','Âng. Nom. (°)','F1 (°)','F2 (°)','Erro (")']]);
-  (st.hz||[]).forEach(r=>{
-    const err=((Number(r[4])+Number(r[5])-360)/2)*3600;
-    tH.appendTableRow([
-      String(r[1]||''), String(r[2]||''), String(r[3]||''), String(r[4]||''), String(r[5]||''), String(Math.round(err*100)/100)
-    ]);
-  });
-
-  body.appendParagraph("Leituras Ângulo Vertical (F1/F2)").setHeading(DocumentApp.ParagraphHeading.HEADING2);
-  const tV = body.appendTable([['Conjunto','Alvo','Âng. Nom. (°)','F1 (°)','F2 (°)','Erro (")']]);
-  (st.v||[]).forEach(r=>{
-    const err=((Number(r[4])-(180-Number(r[5])))/2)*3600;
-    tV.appendTableRow([
-      String(r[1]||''), String(r[2]||''), String(r[3]||''), String(r[4]||''), String(r[5]||''), String(Math.round(err*100)/100)
-    ]);
-  });
-
-  body.appendParagraph("Observações").setHeading(DocumentApp.ParagraphHeading.HEADING2);
-  body.appendParagraph(st.calib.obs || '');
-
-  doc.saveAndClose();
-
-  const url=doc.getUrl();
-  const pdf="https://docs.google.com/document/d/"+doc.getId()+"/export?format=pdf";
-
-  const shL=byName(SHEETS.REL);
-  shL.appendRow([calibId,new Date(),url,pdf,'OK','Gerado com sucesso']);
-
-  return {ok:true,calibId,docUrl:url,pdfUrl:pdf};
-}
-
-/** ===== Web App ===== */
-function buildResp_(obj){
-  const out=ContentService.createTextOutput(JSON.stringify(obj));
-  out.setMimeType(ContentService.MimeType.JSON);
-  out.setHeader("Access-Control-Allow-Origin","*");
-  out.setHeader("Access-Control-Allow-Methods","GET,POST");
-  out.setHeader("Access-Control-Allow-Headers","Content-Type");
-  return out;
-}
-
-function doGet(e){
-  try{
-    if(e?.parameter?.ping) return buildResp_({ok:true,message:"pong"});
-    return buildResp_({ok:true,status:"online"});
-  }catch(err){
-    return buildResp_({ok:false,error:String(err)});
-  }
-}
-
-function doPost(e){
-  try{
-    let raw=e?.postData?.contents || e?.parameter?.data || "";
-    let body={};
-
-    try{ body=JSON.parse(raw); }
-    catch(_){
-      try{
-        raw=decodeURIComponent(raw.replace(/^data=/,''));
-        body=JSON.parse(raw);
-      }catch(err2){
-        return buildResp_({ok:false,error:"JSON inválido"});
-      }
-    }
-
-    const action=body.action;
-    const p=body.payload||{};
-
-    if(!action) return buildResp_({ok:false,error:"Ação não informada"});
-
-    if(action==="newCalibration") return buildResp_(newCalibration(p));
-    if(action==="addEdmRows")     return buildResp_(addEdmRows(p));
-    if(action==="addAngleRows")   return buildResp_(addAngleRows(p.rows,p.tipo));
-    if(action==="computeAll")     return buildResp_(computeAll(p));
-    if(action==="generateReport") return buildResp_(generateReport(p.calibId));
-    if(action==="getState")       return buildResp_({ok:true,data:getState(p.calibId)});
-
-    return buildResp_({ok:false,error:"Ação desconhecida: "+action});
-  }
-  catch(err){
-    return buildResp_({ok:false,error:String(err)});
-  }
-}
+</body>
+</html>
