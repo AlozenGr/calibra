@@ -28,12 +28,11 @@
     <section class="bg-white rounded-2xl shadow p-4">
       <h2 class="font-semibold mb-2">Configuração da API</h2>
       <div class="grid grid-cols-1 md:grid-cols-6 gap-2 text-sm">
-        <input id="apiBase" class="border rounded p-2 md:col-span-5"
-               value="COLE_AQUI_SUA_URL_DO_WEBAPP_EXEC" />
+        <input id="apiBase" class="border rounded p-2 md:col-span-5" />
         <button class="border rounded p-2 bg-slate-100" onclick="saveApi()">Salvar</button>
       </div>
       <div class="mt-2 text-xs text-slate-500">
-        Dica: depois de salvar, o sistema usa essa URL para gravar na planilha.
+        Esta URL é o seu WebApp (/exec). Se estiver correta, o status ficará <b>online</b>.
       </div>
     </section>
 
@@ -134,7 +133,6 @@
           </div>
         </div>
 
-        <!-- Lista visível -->
         <div class="mt-3">
           <div class="text-xs font-semibold text-slate-600 mb-2">Leituras HZ adicionadas</div>
           <div id="hz_list" class="space-y-2"></div>
@@ -170,14 +168,13 @@
           </div>
         </div>
 
-        <!-- Lista visível -->
         <div class="mt-3">
           <div class="text-xs font-semibold text-slate-600 mb-2">Leituras V adicionadas</div>
           <div id="v_list" class="space-y-2"></div>
         </div>
       </div>
 
-      <!-- FECHAMENTO / RESULTADO FINAL -->
+      <!-- FECHAMENTO -->
       <div class="mt-4 border-2 border-slate-900 rounded-xl p-3 bg-white">
         <div class="font-semibold text-center text-lg">Resultado (fechamento)</div>
         <div class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
@@ -227,15 +224,22 @@
 
 <script>
 /** ===========================
- *  Config / API
+ *  API FIXA (já configurada)
  *  =========================== */
-let API_BASE = localStorage.getItem('CALIBRA_API_BASE') || '';
+const FIXED_API_BASE = 'https://script.google.com/macros/s/AKfycbyeeh7Ael8mVVAQ8tIWe2_98u3nOvfhCugxp58csAywOEfVP7QLDY-L-zFctosID1aooA/exec';
+
+/**
+ * Mantém também a opção de salvar no localStorage,
+ * mas por padrão já preenche com a FIXED_API_BASE
+ */
+let API_BASE = localStorage.getItem('CALIBRA_API_BASE') || FIXED_API_BASE;
 
 function saveApi(){
-  API_BASE = document.getElementById('apiBase').value.trim();
+  API_BASE = document.getElementById('apiBase').value.trim() || FIXED_API_BASE;
   localStorage.setItem('CALIBRA_API_BASE', API_BASE);
   ping();
 }
+
 async function ping(){
   try{
     const r = await fetch(API_BASE+'?ping=1');
@@ -244,6 +248,7 @@ async function ping(){
     document.getElementById('status').innerText = 'offline';
   }
 }
+
 function val(id){ return document.getElementById(id).value.trim(); }
 function out(v){ document.getElementById('out').textContent = JSON.stringify(v,null,2); }
 
@@ -262,16 +267,13 @@ function dmsToDecimal(input){
   const s = (input || '').trim();
   if (!s) return NaN;
 
-  // já é número?
   if (/^[+-]?\d+(\.\d+)?$/.test(s)) return Number(s);
 
-  // Normaliza
   const cleaned = s
     .replace(/[^\d\.\-\+°'"\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 
-  // "deg° min' sec""
   const re1 = /^([+-])?\s*(\d+(?:\.\d+)?)\s*°\s*(\d+(?:\.\d+)?)?\s*'?\s*(\d+(?:\.\d+)?)?\s*"?$/;
   const m1 = cleaned.match(re1);
   if (m1) {
@@ -282,7 +284,6 @@ function dmsToDecimal(input){
     return sign * (Math.abs(deg) + (min/60) + (sec/3600));
   }
 
-  // "deg min sec"
   const parts = cleaned.split(' ').filter(Boolean);
   if (parts.length >= 1 && parts.length <= 3 && parts.every(p => /^[+-]?\d+(\.\d+)?$/.test(p))) {
     const deg = Number(parts[0] || 0);
@@ -295,14 +296,12 @@ function dmsToDecimal(input){
   return NaN;
 }
 
-// Normaliza ângulo em graus para o intervalo [0, 360)
 function norm360(deg){
   let x = deg % 360;
   if (x < 0) x += 360;
   return x;
 }
 
-// Converte segundos (") para DMS string
 function secToDMS(sec){
   const sign = sec < 0 ? '-' : '';
   sec = Math.abs(sec);
@@ -312,7 +311,6 @@ function secToDMS(sec){
   const min = Math.floor(rem1 / 60);
   const s = Math.round(rem1 - min*60);
 
-  // Ajuste de carry
   let D = deg, M = min, S = s;
   if (S >= 60){ S -= 60; M += 1; }
   if (M >= 60){ M -= 60; D += 1; }
@@ -320,51 +318,30 @@ function secToDMS(sec){
   return `${sign}${D}°${String(M).padStart(2,'0')}'${String(S).padStart(2,'0')}"`;
 }
 
-// Aplica cor (azul se 0, vermelho se != 0)
 function colorize(el, sec){
   el.classList.remove('text-blue-700','text-red-700');
   if (Math.abs(sec) > 0) el.classList.add('text-red-700');
   else el.classList.add('text-blue-700');
 }
 
-/** ===========================
- *  Cálculos de resultado (conferência)
- *  =========================== */
-
-// Resultado HZ = |(F1 + F2) - 180°|
 function computeHzErrorSeconds(F1deg, F2deg){
   if (Number.isNaN(F1deg) || Number.isNaN(F2deg)) return null;
-
   const f1 = norm360(F1deg);
   const f2 = norm360(F2deg);
-
-  // erro em graus:
   let errDeg = (f1 + f2) - 180.0;
-
-  // traga para o intervalo [-180, +180] para evitar coisas como 359°
   errDeg = ((errDeg + 180) % 360) - 180;
-
   const errSec = Math.round(Math.abs(errDeg) * 3600);
   return errSec;
 }
 
-// Resultado V = |F1 - (180° - F2)|
 function computeVErrorSeconds(F1deg, F2deg){
   if (Number.isNaN(F1deg) || Number.isNaN(F2deg)) return null;
-
   const f1 = norm360(F1deg);
   const f2 = norm360(F2deg);
-
-  // (180 - F2)
   let ref = 180.0 - f2;
   ref = norm360(ref);
-
-  // diferença em graus
   let errDeg = f1 - ref;
-
-  // traga para [-180, +180]
   errDeg = ((errDeg + 180) % 360) - 180;
-
   const errSec = Math.round(Math.abs(errDeg) * 3600);
   return errSec;
 }
@@ -388,7 +365,6 @@ function previewHzResult(){
   el2.textContent = `(${sec}")`;
   colorize(el, sec);
 
-  // também atualiza o fechamento (preview)
   document.getElementById('final_hz').textContent = secToDMS(sec);
   document.getElementById('final_hz_sec').textContent = `(${sec}")`;
   colorize(document.getElementById('final_hz'), sec);
@@ -413,16 +389,14 @@ function previewVResult(){
   el2.textContent = `(${sec}")`;
   colorize(el, sec);
 
-  // também atualiza o fechamento (preview)
   document.getElementById('final_v').textContent = secToDMS(sec);
   document.getElementById('final_v_sec').textContent = `(${sec}")`;
   colorize(document.getElementById('final_v'), sec);
 }
 
 /** ===========================
- *  Ações: salvar calibração / EDM
+ *  Ações
  *  =========================== */
-
 async function novaCalibracao(){
   const r = await callAPI('newCalibration',{
     calibId:val('calibId'),data:val('data'),cliente:val('cliente'),cnpj:val('cnpj'),
@@ -448,10 +422,6 @@ async function addEdm(){
   out(r);
 }
 
-/** ===========================
- *  Ações: adicionar HZ / V (mantém visível + envia API)
- *  =========================== */
-
 function addRowToList(listId, rowHtml){
   const list = document.getElementById(listId);
   const div = document.createElement('div');
@@ -459,12 +429,20 @@ function addRowToList(listId, rowHtml){
   list.prepend(div.firstElementChild);
 }
 
+function escapeHtml(str){
+  return String(str||'')
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'","&#039;");
+}
+
 async function addAngHZ(){
   const calibId = val('ang_calibId');
   const pos = val('hz_pos');
   const f1s = val('hz_f1');
   const f2s = val('hz_f2');
-
   const f1 = dmsToDecimal(f1s);
   const f2 = dmsToDecimal(f2s);
 
@@ -474,7 +452,6 @@ async function addAngHZ(){
   const sec = computeHzErrorSeconds(f1,f2);
   const dms = secToDMS(sec);
 
-  // Mantém visível na tela (lista)
   const color = (sec===0) ? 'text-blue-700' : 'text-red-700';
   addRowToList('hz_list', `
     <div class="bg-white border rounded-lg p-2 text-sm flex items-center justify-between gap-3">
@@ -489,17 +466,15 @@ async function addAngHZ(){
     </div>
   `);
 
-  // Atualiza fechamento (com a última leitura adicionada)
   document.getElementById('final_hz').textContent = dms;
   document.getElementById('final_hz_sec').textContent = `(${sec}")`;
   colorize(document.getElementById('final_hz'), sec);
 
-  // Envia para planilha (compatível com backend atual)
   const r = await callAPI('addAngleRows',{
     tipo:'HZ',
     rows:[{
       calibId,
-      conjunto: pos,     // posicao
+      conjunto: pos,
       F1_deg: f1,
       F2_deg: f2,
       obs: val('ang_obs'),
@@ -514,7 +489,6 @@ async function addAngV(){
   const pos = val('v_pos');
   const f1s = val('v_f1');
   const f2s = val('v_f2');
-
   const f1 = dmsToDecimal(f1s);
   const f2 = dmsToDecimal(f2s);
 
@@ -524,7 +498,6 @@ async function addAngV(){
   const sec = computeVErrorSeconds(f1,f2);
   const dms = secToDMS(sec);
 
-  // Mantém visível na tela (lista)
   const color = (sec===0) ? 'text-blue-700' : 'text-red-700';
   addRowToList('v_list', `
     <div class="bg-white border rounded-lg p-2 text-sm flex items-center justify-between gap-3">
@@ -539,17 +512,15 @@ async function addAngV(){
     </div>
   `);
 
-  // Atualiza fechamento (última leitura adicionada)
   document.getElementById('final_v').textContent = dms;
   document.getElementById('final_v_sec').textContent = `(${sec}")`;
   colorize(document.getElementById('final_v'), sec);
 
-  // Envia para planilha
   const r = await callAPI('addAngleRows',{
     tipo:'V',
     rows:[{
       calibId,
-      conjunto: pos,     // posicao
+      conjunto: pos,
       F1_deg: f1,
       F2_deg: f2,
       obs: val('ang_obs'),
@@ -559,19 +530,6 @@ async function addAngV(){
   out(r);
 }
 
-// escape simples p/ HTML
-function escapeHtml(str){
-  return String(str||'')
-    .replaceAll('&','&amp;')
-    .replaceAll('<','&lt;')
-    .replaceAll('>','&gt;')
-    .replaceAll('"','&quot;')
-    .replaceAll("'","&#039;");
-}
-
-/** ===========================
- *  Processamento / Certificado
- *  =========================== */
 async function calcular(fase){
   const r = await callAPI('computeAll',{calibId:val('run_calibId'),fase});
   out(r);
@@ -600,13 +558,11 @@ function fillDemo(){
   document.getElementById('ang_calibId').value = 'CAL-TEST-001';
   document.getElementById('run_calibId').value = 'CAL-TEST-001';
 
-  // exemplo HZ (teu caso)
   document.getElementById('hz_pos').value = '0°/180°';
   document.getElementById('hz_f1').value = `0°00'00"`;
   document.getElementById('hz_f2').value = `179°59'52"`;
   previewHzResult();
 
-  // exemplo V
   document.getElementById('v_pos').value = 'Vertical';
   document.getElementById('v_f1').value = `89°59'52"`;
   document.getElementById('v_f2').value = `270°00'08"`;
@@ -627,8 +583,8 @@ function fillDemoEdm(){
   out({ok:true, msg:'Exemplo EDM preenchido.'});
 }
 
-// init
-if (API_BASE) document.getElementById('apiBase').value = API_BASE;
+/** init */
+document.getElementById('apiBase').value = API_BASE;
 ping();
 </script>
 </body>
